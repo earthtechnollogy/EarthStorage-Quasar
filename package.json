@@ -1,0 +1,31 @@
+{
+  "name": "@earthtechnollogy/earthstorage-quasar",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "description": "Add the EarthStorage package to your quasar project",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/earthtechnollogy/EarthStorage-Quasar.git"
+  },
+  "author": {
+    "name": "EarthTechnollogy",
+    "email": "jcruzaraujoneto@earthtechnollogy.com",
+    "url": "https://earthtechnollogy.com"
+  },
+  "bugs": {
+    "url": "https://github.com/earthtechnollogy/EarthStorage-Quasar/issues"
+  },
+  "keywords": [
+    "storage",
+    "EarthStorage",
+    "EarthTechnollogy"
+  ],
+  "homepage": "https://github.com/earthtechnollogy/EarthStorage-Quasar#readme",
+  "dependencies": {
+    "@earthtechnollogy/earthstorage-sdk": "^1.5.0"
+  }
+}
