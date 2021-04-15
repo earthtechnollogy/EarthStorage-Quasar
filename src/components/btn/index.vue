@@ -1,6 +1,6 @@
 <script>
 export default {
-  name: 'EarthBtn',
+  name: 'EarthStorageBtn',
   props: {
     icon: { Type: String, default: null },
     label: { Type: String, default: null },
@@ -13,12 +13,15 @@ export default {
 </script>
 
 <template>
-  <q-btn :label="label" :icon="icon" :loading="loading" color="primary" @click="clickFn">
-    <slot/>
-  </q-btn>
+  <div class="earth-storage-btn">
+    <q-btn :label="label" :icon="icon" :loading="loading" color="primary" @click="clickFn">
+      <slot/>
+    </q-btn>
+  </div>
 </template>
 
 <style lang="stylus">
-  .q-btn
-    font-size 1.35rem
+  .earth-storage-btn
+    .q-btn
+      font-size 1.35rem
 </style>

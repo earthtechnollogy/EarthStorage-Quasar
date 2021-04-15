@@ -1,9 +1,9 @@
 <script>
-import EarthBtn from '../btn'
+import EarthStorageBtn from '../btn'
 
 export default {
-  name: 'ShFile',
-  components: { EarthBtn },
+  name: 'EarthStorageFile',
+  components: { EarthStorageBtn },
   props: {
     value: { default: null },
 
@@ -57,15 +57,16 @@ export default {
 </script>
 
 <template>
-  <earth-btn :label="label" :icon="icon" :loading="loading">
-    <label for="input-sh-file" class="label"></label>
-    <input id="input-sh-file" type="file" :accept="accept" :multiple="multiple" @change="uploadFn" class="file" v-if="!loading"/>
-  </earth-btn>
+  <div class="earth-storage-file">
+    <earth-storage-btn :label="label" :icon="icon" :loading="loading">
+      <label for="input-sh-file" class="label"></label>
+      <input id="input-sh-file" type="file" :accept="accept" :multiple="multiple" @change="uploadFn" class="file" v-if="!loading"/>
+    </earth-storage-btn>
+  </div>
 </template>
 
-<style lang="stylus" scoped>
-  .q-btn
-    width 100%
+<style lang="stylus">
+  .earth-storage-file
     .label
       width 100%
       height 100%

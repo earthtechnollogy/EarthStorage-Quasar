@@ -1,26 +1,53 @@
 <script>
 import EarthStorage from '@earthtechnollogy/earthstorage-sdk'
 
-import EarthBtn from '../btn'
 import Dir from '../../domain/dir'
+import EarthStorageDir from '../dir'
+import EarthStorageBtn from '../btn'
+import EarthStorageFile from '../file'
 
 const storage = new EarthStorage()
 
 export default {
   name: 'EarthStorage',
-  components: { EarthBtn },
-  props: [
-    folder: { type: String, default: null },
-    apiKey: { type: String, required: true }
-  ],
+  components: { EarthStorageDir, EarthStorageBtn, EarthStorageFile },
+  props: {
+    value: { type: String, default: null },
+
+    type: {
+      type: String,
+      default: 'dir',
+      validator: (val) => ['dir', 'select'].includes(val)
+    },
+    multiple: { type: Boolean, default: false },
+    select: { type: [String, Array], default: null },
+
+    apiKey: { type: String, required: true },
+    noLoading: { type: Boolean, default: false },
+    noQueryFolder: { type: Boolean, default: false }
+  },
   data: () => ({
     dir: []
   }),
   created () {
-    this.folder = this.$route.query.folder || null
+    if (!this.noQueryFolder) this.folder = this.$route.query.folder || null
     this.updateFn()
   },
   computed: {
+    folder: {
+      get () { return this.value },
+      set (val) { this.$emit('input', val) }
+    },
+    selects: {
+      get () {
+        if (!this.select) return []
+        return this.multiple ? this.select : [this.select]
+      },
+      set (val) {
+        if (!this.multiple) val = val[0]
+        this.$emit('update:select', val)
+      }
+    },
     paths () {
       if (!this.folder) return []
       return this.folder.split('/').map((x, i) => {
@@ -32,22 +59,22 @@ export default {
     updateFn () {
       if (!this.apiKey) return
 
-      this.$q.loading.show()
+      this.setLoadingFn(true)
       storage.setApiKey(this.apiKey)
-      this.$router.push({ query: { folder: this.folder } })
-        .catch(() => {})
+      if (!this.noQueryFolder) this.$router.push({ query: { folder: this.folder } }).catch(() => {})
       storage.dir.list(this.folder)
         .then(dir => { this.dir = dir })
         .catch(e => this.$Msg(e.message, false))
-        .finally(() => this.$q.loading.hide())
+        .finally(() => this.setLoadingFn(false))
     },
 
-    selectFn (dir) {
+    clickDirFn (dir) {
       if (dir.type === 'folder') return this.addPathToFolderFn(dir.name)
-      window.open(dir.href)
+      if (this.type === 'select') return this.selectFileFn(dir)
+      this.viewFileFn(dir)
     },
     uploadFileFn (files) {
-      this.$q.loading.show()
+      this.setLoadingFn(true)
 
       files = files.map(x => {
         const dir = new Dir()
@@ -67,7 +94,7 @@ export default {
     createFolderFn () {
       this.$Alert('Criar Pasta', '', { prompt: { model: '', type: 'text' } })
         .onOk(name => {
-          this.$q.loading.show()
+          this.setLoadingFn(true)
 
           const dir = new Dir()
           dir.name = name
@@ -81,7 +108,7 @@ export default {
         })
     },
     async downloadFn (dir) {
-      this.$q.loading.show()
+      this.setLoadingFn(true)
 
       const blob = await storage.files.get(dir.href)
       const fileReader = new FileReader()
@@ -102,15 +129,33 @@ export default {
         .finally(() => this.updateFn())
     },
 
+    setLoadingFn (loading) {
+      loading = loading ? 'show' : 'hide'
+      if (this.noLoading) return this.$emit(`loading-${loading}`)
+      this.$q.loading[loading]()
+    },
     addPathToFolderFn (path) {
       if (!this.folder) this.folder = path
       else this.folder += '/' + path
+    },
+    viewFileFn (file) {
+      window.open(file.href)
+    },
+    selectFileFn (file) {
+      let selects = JSON.parse(JSON.stringify(this.selects))
+      const index = selects.findIndex(x => x === file.href)
+      if (index > -1) selects.splice(index, 1)
+      else {
+        if (this.multiple) selects.push(file.href)
+        else selects = [file.href]
+      }
+      this.selects = selects
     }
   },
   watch: {
     folder () { this.updateFn() },
     apiKey () { this.updateFn() },
-    '$route.query.folder' () { this.folder = this.$route.query.folder || null }
+    '$route.query.folder' () { if (!this.noQueryFolder) this.folder = this.$route.query.folder || null }
   }
 }
 </script>
@@ -119,30 +164,30 @@ export default {
   <div class="earth-storage">
 
     <div class="options row">
-      <earth-file multiple @input="uploadFileFn"/>
-      <earth-btn label="Criar Pasta" icon="eva-folder-outline" @click="createFolderFn"/>
+      <earth-storage-file multiple @input="uploadFileFn"/>
+      <earth-storage-btn label="Criar Pasta" icon="eva-folder-outline" @click="createFolderFn"/>
     </div>
 
     <div class="folders">
       <q-breadcrumbs>
-        <q-breadcrumbs-el icon="home" :to="{ query: { folder: null } }"/>
+        <q-breadcrumbs-el icon="home" @click="folder = null"  class="cursor-pointer"/>
         <q-breadcrumbs-el v-for="path in paths" :key="path.label"
-          :label="path.label" :to="{ query: { folder: path.folder } }"/>
+          :label="path.label" @click="folder = path.folder" class="cursor-pointer"/>
       </q-breadcrumbs>
     </div>
 
     <div class="container row" v-if="dir.length">
       <div v-for="d in dir" :key="d.folder + d.name">
-        <earth-storage-dir :metadata="d" @click="selectFn(d)"/>
+        <earth-storage-dir :metadata="d" :selected="!!selects.find(x => x === d.href)" @click="clickDirFn(d)"/>
         <q-menu context-menu>
           <q-list style="min-width: 150px">
-            <q-item clickable v-close-popup @click="selectFn(d)">
+            <q-item clickable v-close-popup @click="viewFileFn(d)">
               <q-item-section avatar>
                 <q-icon name="visibility"/>
               </q-item-section>
               <q-item-section>Visualizar</q-item-section>
             </q-item>
-            <q-item clickable v-close-popup @click="downloadFn(d)">
+            <q-item clickable v-close-popup @click="downloadFn(d)" v-if="d.type !== 'folder'">
               <q-item-section avatar>
                 <q-icon name="download"/>
               </q-item-section>
@@ -170,6 +215,7 @@ export default {
   .earth-storage
     .options
       padding 1rem
+      padding-left 0
       .sh-file
         width 300px
       .q-btn
